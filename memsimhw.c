@@ -164,7 +164,12 @@ void secondLevelVMSim(struct procEntry *procTable, struct framePage *phyMemFrame
 					procTable[i].firstLevelPageTable[pnum1].secondLevelPageTable[pnum2].frameNumber = oldestFrame->number;
 					oldestFrame->virtualPageNumber = pagenum;
 					oldestFrame->pid = procTable[i].pid;
+
+					struct framePage *tmpFrame;
+					tmpFrame = oldestFrame;
 					oldestFrame = oldestFrame->lruRight;
+					oldestFrame->lruLeft->lruRight = tmpFrame;
+					oldestFrame->lruLeft = tmpFrame;
 
 					fnum = oldestFrame->number;
 				}
@@ -197,7 +202,12 @@ void secondLevelVMSim(struct procEntry *procTable, struct framePage *phyMemFrame
 				procTable[i].firstLevelPageTable[pnum1].secondLevelPageTable[pnum2].frameNumber = oldestFrame->number;
 				oldestFrame->virtualPageNumber = pagenum;
 				oldestFrame->pid = procTable[i].pid;
+
+				struct framePage *tmpFrame;
+				tmpFrame = oldestFrame;
 				oldestFrame = oldestFrame->lruRight;
+				oldestFrame->lruLeft->lruRight = tmpFrame;
+				oldestFrame->lruLeft = tmpFrame;
 
 				fnum = oldestFrame->number;
 			}
