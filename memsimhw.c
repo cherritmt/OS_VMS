@@ -1,53 +1,52 @@
 //
-// Virual Memory Simulator Homework
+// Virual Memory Simulator
 // Two-level page table system
-// Inverted page table with a hashing system 
+// Inverted page table with a hashing system
 // Student Name: 신재협
-// Student Number: B411114
 //
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 
-#define PAGESIZEBITS 12			// page size = 4Kbytes
-#define VIRTUALADDRBITS 32		// virtual address space size = 4Gbytes
+#define PAGESIZEBITS 12	// page size = 4Kbytes
+#define VIRTUALADDRBITS 32 // virtual address space size = 4Gbytes
 
 struct pageTableEntry
 {
-	int level;				// page table level (1 or 2)
+	int level; // page table level (1 or 2)
 	char valid;
-	struct pageTableEntry *secondLevelPageTable;	// valid if this entry is for the first level page table (level = 1)
-	int frameNumber;								// valid if this entry is for the second level page table (level = 2)
+	struct pageTableEntry *secondLevelPageTable; // valid if this entry is for the first level page table (level = 1)
+	int frameNumber;							 // valid if this entry is for the second level page table (level = 2)
 };
 
 struct framePage
 {
-	int number;			// frame number
-	int pid;			// Process id that owns the frame
-	int virtualPageNumber;			// virtual page number using the frame
-	struct framePage *lruLeft;	// for LRU circular doubly linked list
+	int number;					// frame number
+	int pid;					// Process id that owns the frame
+	int virtualPageNumber;		// virtual page number using the frame
+	struct framePage *lruLeft;  // for LRU circular doubly linked list
 	struct framePage *lruRight; // for LRU circular doubly linked list
 };
 
 struct invertedPageTableEntry
 {
-	int pid;					// process id
-	int virtualPageNumber;		// virtual page number
-	int frameNumber;			// frame number allocated
+	int pid;			   // process id
+	int virtualPageNumber; // virtual page number
+	int frameNumber;	   // frame number allocated
 	struct invertedPageTableEntry *next;
 };
 
 struct procEntry
 {
-	char *traceName;			// the memory trace name
-	int pid;					// process (trace) id
-	int ntraces;				// the number of memory traces
-	int num2ndLevelPageTable;	// The 2nd level page created(allocated);
-	int numIHTConflictAccess; 	// The number of Inverted Hash Table Conflict Accesses
-	int numIHTNULLAccess;		// The number of Empty Inverted Hash Table Accesses
-	int numIHTNonNULLAcess;		// The number of Non Empty Inverted Hash Table Accesses
-	int numPageFault;			// The number of page faults
-	int numPageHit;				// The number of page hits
+	char *traceName;		  // the memory trace name
+	int pid;				  // process (trace) id
+	int ntraces;			  // the number of memory traces
+	int num2ndLevelPageTable; // The 2nd level page created(allocated);
+	int numIHTConflictAccess; // The number of Inverted Hash Table Conflict Accesses
+	int numIHTNULLAccess;	 // The number of Empty Inverted Hash Table Accesses
+	int numIHTNonNULLAcess;   // The number of Non Empty Inverted Hash Table Accesses
+	int numPageFault;		  // The number of page faults
+	int numPageHit;			  // The number of page hits
 	struct pageTableEntry *firstLevelPageTable;
 	FILE *tracefp;
 };
@@ -70,7 +69,6 @@ void initPhyMem(struct framePage *phyMem, int nFrame)
 	}
 
 	oldestFrame = &phyMem[0];
-
 }
 
 void secondLevelVMSim(struct procEntry *procTable, struct framePage *phyMemFrames)
@@ -91,7 +89,7 @@ void secondLevelVMSim(struct procEntry *procTable, struct framePage *phyMemFrame
 		procTable[i].tracefp = file;
 
 		//1st페이지 테이블 생성. 엔트리 수는 2의 1stLVbits제곱.
-		procTable[i].firstLevelPageTable = (struct pageTableEntry*)malloc(sizeof(struct pageTableEntry)*(1 << firstLevelBits));
+		procTable[i].firstLevelPageTable = (struct pageTableEntry *)malloc(sizeof(struct pageTableEntry) * (1 << firstLevelBits));
 		for (j = 0; j < (1 << firstLevelBits); j++)
 		{
 			procTable[i].firstLevelPageTable[j].level = 1;
@@ -102,7 +100,7 @@ void secondLevelVMSim(struct procEntry *procTable, struct framePage *phyMemFrame
 	}
 
 	int b_cnt = 0;
-	int *b_numprocess = (int*)malloc(sizeof(int)*numProcess);
+	int *b_numprocess = (int *)malloc(sizeof(int) * numProcess);
 	for (i = 0; i < numProcess; i++)
 	{
 		b_numprocess[i] = 0;
@@ -128,8 +126,7 @@ void secondLevelVMSim(struct procEntry *procTable, struct framePage *phyMemFrame
 			if (procTable[i].firstLevelPageTable[pnum1].valid == 1)
 			{
 				//2nd PT에 Hit
-				if (procTable[i].firstLevelPageTable[pnum1].secondLevelPageTable[pnum2].valid == 1
-					&& procTable[i].firstLevelPageTable[pnum1].secondLevelPageTable[pnum2].frameNumber != -1)
+				if (procTable[i].firstLevelPageTable[pnum1].secondLevelPageTable[pnum2].valid == 1 && procTable[i].firstLevelPageTable[pnum1].secondLevelPageTable[pnum2].frameNumber != -1)
 				{
 					procTable[i].numPageHit++;
 					fnum = procTable[i].firstLevelPageTable[pnum1].secondLevelPageTable[pnum2].frameNumber;
@@ -191,7 +188,7 @@ void secondLevelVMSim(struct procEntry *procTable, struct framePage *phyMemFrame
 
 				procTable[i].firstLevelPageTable[pnum1].valid = 1;
 				//2nd페이지 테이블 생성. 엔트리 수는 2의 2ndLVbits제곱.
-				procTable[i].firstLevelPageTable[pnum1].secondLevelPageTable = (struct pageTableEntry*)malloc(sizeof(struct pageTableEntry)*(1 << (32 - firstLevelBits - PAGESIZEBITS)));
+				procTable[i].firstLevelPageTable[pnum1].secondLevelPageTable = (struct pageTableEntry *)malloc(sizeof(struct pageTableEntry) * (1 << (32 - firstLevelBits - PAGESIZEBITS)));
 				procTable[i].num2ndLevelPageTable++;
 				procTable[i].firstLevelPageTable[pnum1].secondLevelPageTable[pnum2].level = 2;
 				procTable[i].firstLevelPageTable[pnum1].secondLevelPageTable[pnum2].valid = 1;
@@ -207,8 +204,7 @@ void secondLevelVMSim(struct procEntry *procTable, struct framePage *phyMemFrame
 			procTable[i].ntraces++;
 			physicalAddr = (unsigned)offset | (unsigned)(fnum << PAGESIZEBITS);
 			printf("2Level procID %d traceNumber %d virtual addr %x pysical addr %x\n", i,
-				procTable[i].ntraces, addr, physicalAddr);
-
+				   procTable[i].ntraces, addr, physicalAddr);
 		}
 		else if (b_numprocess[i] == 0)
 		{
@@ -249,10 +245,10 @@ void invertedPageVMSim(struct procEntry *procTable, struct framePage *phyMemFram
 	FILE *file = NULL;
 	struct invertedPageTableEntry *nextEntry;
 	struct invertedPageTableEntry *prevEntry;
-	struct invertedPageTableEntry* temp1;
+	struct invertedPageTableEntry *temp1;
 
 	//물리메모리 프레임 수 크기의 global IPT 생성
-	struct invertedPageTableEntry *invertedPT = (struct invertedPageTableEntry*)malloc(sizeof(struct invertedPageTableEntry)*nFrame);
+	struct invertedPageTableEntry *invertedPT = (struct invertedPageTableEntry *)malloc(sizeof(struct invertedPageTableEntry) * nFrame);
 
 	for (j = 0; j < nFrame; j++)
 	{
@@ -274,7 +270,7 @@ void invertedPageVMSim(struct procEntry *procTable, struct framePage *phyMemFram
 	}
 
 	int b_cnt = 0;
-	int *b_numprocess = (int*)malloc(sizeof(int)*numProcess);
+	int *b_numprocess = (int *)malloc(sizeof(int) * numProcess);
 	for (i = 0; i < numProcess; i++)
 	{
 		b_numprocess[i] = 0;
@@ -298,8 +294,7 @@ void invertedPageVMSim(struct procEntry *procTable, struct framePage *phyMemFram
 			j = (pnum + procTable[i].pid) % nFrame; //Hash Table 인덱스 j
 
 			//hit
-			if (invertedPT[j].pid == procTable[i].pid && invertedPT[j].virtualPageNumber == pnum
-				&& phyMemFrames[invertedPT[j].frameNumber].virtualPageNumber == pnum && phyMemFrames[invertedPT[j].frameNumber].pid == procTable[i].pid)
+			if (invertedPT[j].pid == procTable[i].pid && invertedPT[j].virtualPageNumber == pnum && phyMemFrames[invertedPT[j].frameNumber].virtualPageNumber == pnum && phyMemFrames[invertedPT[j].frameNumber].pid == procTable[i].pid)
 			{
 				procTable[i].numIHTConflictAccess++;
 				procTable[i].numIHTNonNULLAcess++;
@@ -364,11 +359,11 @@ void invertedPageVMSim(struct procEntry *procTable, struct framePage *phyMemFram
 				}
 			}
 
-			if (b_search == 1)//hit
+			if (b_search == 1) //hit
 			{
 				procTable[i].numPageHit++;
 			}
-			else//fault
+			else //fault
 			{
 				procTable[i].numPageFault++;
 
@@ -481,7 +476,7 @@ void invertedPageVMSim(struct procEntry *procTable, struct framePage *phyMemFram
 					}
 
 					nextEntry = &invertedPT[j];
-					temp1 = (struct invertedPageTableEntry*)malloc(sizeof(struct invertedPageTableEntry));
+					temp1 = (struct invertedPageTableEntry *)malloc(sizeof(struct invertedPageTableEntry));
 					temp1->pid = procTable[i].pid;
 					temp1->virtualPageNumber = pnum;
 					temp1->frameNumber = oldestFrame->number;
@@ -506,7 +501,6 @@ void invertedPageVMSim(struct procEntry *procTable, struct framePage *phyMemFram
 					temp1->virtualPageNumber = temp2.virtualPageNumber;
 					temp1->frameNumber = temp2.frameNumber;
 
-
 					fnum = invertedPT[j].frameNumber;
 				}
 			}
@@ -514,7 +508,7 @@ void invertedPageVMSim(struct procEntry *procTable, struct framePage *phyMemFram
 
 			physicalAddr = (unsigned)offset | (unsigned)(fnum << PAGESIZEBITS); //offset과frame number의 or연산 해야
 			printf("IHT procID %d traceNumber %d virtual addr %x pysical addr %x\n", i,
-				procTable[i].ntraces, addr, physicalAddr);
+				   procTable[i].ntraces, addr, physicalAddr);
 		}
 		else if (b_numprocess[i] == 0)
 		{
@@ -563,8 +557,7 @@ int main(int argc, char *argv[])
 	numProcess = argc - 3;
 
 	int i;
-	struct procEntry *procTbl = (struct procEntry*)malloc(sizeof(struct procEntry)*numProcess);
-
+	struct procEntry *procTbl = (struct procEntry *)malloc(sizeof(struct procEntry) * numProcess);
 
 	if (argc < 4)
 	{
@@ -600,7 +593,7 @@ int main(int argc, char *argv[])
 	unsigned int nFrame = (1 << (phyMemSizeBits - PAGESIZEBITS));
 	assert(nFrame > 0);
 
-	struct framePage *phyM = (struct framePage*)malloc(sizeof(struct framePage)*nFrame);
+	struct framePage *phyM = (struct framePage *)malloc(sizeof(struct framePage) * nFrame);
 	initPhyMem(phyM, nFrame);
 
 	printf("\nNum of Frames %d Physical Memory Size %ld bytes\n", nFrame, (1L << phyMemSizeBits));
@@ -634,5 +627,5 @@ int main(int argc, char *argv[])
 
 	free(phyM);
 	free(procTbl);
-	return(0);
+	return (0);
 }
